@@ -29,5 +29,8 @@ export namespace Tables {
     checkHead: boolean;
     checkFinance: boolean;
     IncludeDate: Date;
+    idArchive?:number
   };
+
+  export type excellData = Tables.Hour & Partial<Tables.User>
 }

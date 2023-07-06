@@ -1,5 +1,5 @@
 // criar exportação em excell
-import excel from "exceljs";
+import excel, { Table } from "exceljs";
 import connection from "../../../core/database";
 import { Tables } from "../../../@types/tables";
 import WAWebJS from "whatsapp-web.js";
@@ -12,14 +12,6 @@ const getUser = async (message: WAWebJS.Message) => {
     .where({ wtsId: message.from })
     .first();
   return user;
-};
-const getHours = async (message: WAWebJS.Message) => {
-  const user = await getUser(message);
-  await connection<Tables.Hour>("tb_hour")
-    .select("*")
-    .where({ idUser: user?.idUser })
-    .where({ checkHead: false })
-    .where({ checkFinance: false });
 };
 
 export const createExcell = async (
@@ -45,7 +37,7 @@ export const createExcell = async (
 
   const user = await getUser(message);
   let hours;
-  if (check == false) {
+  if (check == true) {
     hours = await connection<Tables.Hour>("tb_hour")
       .select("*")
       .where({ idUser: user?.idUser })
@@ -72,19 +64,6 @@ export const createExcell = async (
     //console.log(row);
     Sh.addRow(row);
   }
-  if (check == false) {
-    async (message) => {
-      const user = await getUser(message);
-      const hourId = connection<Tables.Hour>("tb_hour")
-        .select("idHour")
-        .where({ idUser: user?.idUser });
-
-      connection<Tables.Hour>("tb_hour")
-        .update({ checkHead: true })
-        .whereIn("idUser", hourId).andWhere({checkHead:false, checkFinance:false})
-        
-    };
-  } else {
     async (message) => {
       const user = await getUser(message);
       const hourId = connection<Tables.Hour>("tb_hour")
@@ -95,7 +74,7 @@ export const createExcell = async (
         .update({ checkFinance: true })
         .whereIn("idUser", hourId);
     };
-  }
+
 
   const nomeArquivo = `Relatorio_horas_${message.timestamp}.xlsx`;
 
@@ -106,3 +85,40 @@ export const createExcell = async (
     path: path.resolve(__dirname, "c:/temp", nomeArquivo),
   };
 };
+
+type excellData = Tables.Hour & Partial<Tables.User>
+
+export const generateExcell = async (
+  archives : excellData[]
+) => {
+    const Ex = new excel.Workbook();
+    const Sh = Ex.addWorksheet("relatorio_horas"); // colocar no template e melhorar o texto
+
+    Sh.columns = [
+      { key: "task", header: "Chamado/Card" },
+      { key: "hours", header: "Horas" },
+      { key: "date", header: "data" },
+      { key: "coment", header: "comentario" },
+    ];
+
+    archives.forEach(archive => {
+      const row = [
+        archive.idHour,
+        archive.taskNumber,
+        archive.user,
+        archive.date
+        
+      ]
+
+      Sh.addRow(row)
+    })
+    const nomeArquivo = `Relatorio_horas_${Date.now()}.xlsx`;
+
+    await Ex.xlsx.writeFile(path.resolve(__dirname, "c:/temp", nomeArquivo));
+  
+    return {
+      name: nomeArquivo,
+      path: path.resolve(__dirname, "c:/temp", nomeArquivo),
+    };
+
+}
