@@ -9,8 +9,8 @@ class enviaEmail {
       port: 587,
       secure: false, // true for 465, false for other ports
       auth: {
-        user: "sbarbosa@pdasolucoes.com.br", // generated ethereal user
-        pass: "PDA@2020", // generated ethereal password
+        user: "-1", // generated ethereal user
+        pass: "-1", // generated ethereal password
       },
     });
   }
